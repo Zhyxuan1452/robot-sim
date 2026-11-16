@@ -1,0 +1,8 @@
+services:
+  robot-sim:
+    build: .
+    image: robot-sim:v1
+    container_name: robot-sim
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
