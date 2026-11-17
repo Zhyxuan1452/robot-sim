@@ -1,0 +1,47 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: 单元测试
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 安装依赖
+        run: pip install -r requirements.txt
+
+      - name: 运行测试
+        run: python -m unittest discover -s tests -v
+
+  docker-build:
+    name: 构建镜像
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: docker build
+        run: docker build -t robot-sim:ci .
+
+      - name: 启动并健康检查
+        run: |
+          docker run -d --name ci-test -p 8080:8080 robot-sim:ci
+          for i in $(seq 1 20); do
+            if curl -fsS http://127.0.0.1:8080/health; then
+              echo "healthy"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "health check failed"
+          docker logs ci-test
+          exit 1
