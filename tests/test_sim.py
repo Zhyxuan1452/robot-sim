@@ -8,7 +8,7 @@ from sim import Sim  # noqa: E402
 
 
 def build():
-    # 起点 (1,1)；右侧 (2,1) 是障碍
+    # 5x5 地图，起点 (1,1)，右侧 (2,1) 是障碍
     return Sim(width=5, height=5, start=(1, 1), obstacles=[(2, 1)])
 
 
@@ -36,10 +36,12 @@ class TestSim(unittest.TestCase):
 
     def test_out_of_bounds(self):
         s = build()
-        r = s.move("up")
-        self.assertFalse(r["ok"])
-        self.assertEqual(r["reason"], "out_of_bounds")
-        self.assertEqual(r["robot"], {"x": 1, "y": 1})
+        r1 = s.move("up")           # (1,1) -> (1,0) 合法
+        self.assertTrue(r1["ok"])
+        r2 = s.move("up")           # (1,0) -> (1,-1) 越界
+        self.assertFalse(r2["ok"])
+        self.assertEqual(r2["reason"], "out_of_bounds")
+        self.assertEqual(r2["robot"], {"x": 1, "y": 0})  # 留在原地
 
     def test_invalid_direction(self):
         s = build()
@@ -54,7 +56,6 @@ class TestSim(unittest.TestCase):
         self.assertTrue(r["round_completed"])
         self.assertEqual(len(r["rounds"]), 1)
         self.assertEqual(r["rounds"][0]["round"], 1)
-        # 完成后状态回到未出发
         self.assertEqual(s.to_dict()["status"], "not_started")
 
     def test_staying_at_start_does_not_complete(self):
@@ -67,19 +68,17 @@ class TestSim(unittest.TestCase):
         s.move("up")            # 第 1 轮
         s.to_dict(); s.to_dict()
         self.assertEqual(len(s.rounds), 1)
-        # 没有再次离开，直接回到起点不应新增
+
         s.move("down")
         s.move("up")            # 第 2 轮
         self.assertEqual(len(s.rounds), 2)
 
     def test_invalid_move_does_not_complete(self):
         s = build()
-        s.move("down")          # 离开
-        s.move("right")         # (2,2) 可行
-        s.move("right")         # (3,2) 可行
-        # 制造无效移动：走到边界外
-        s.move("down"); s.move("down"); s.move("down")  # (3,4) 边界内
-        r = s.move("down")      # (3,5) 越界
+        s.move("down")                              # (1,2) 离开起点
+        s.move("right"); s.move("right")            # (3,2)
+        s.move("down"); s.move("down"); s.move("down")  # (3,5) 越界
+        r = s.move("down")                          # 仍然越界
         self.assertFalse(r["ok"])
         self.assertFalse(r["round_completed"])
         self.assertEqual(len(s.rounds), 0)
