@@ -8,22 +8,34 @@
 
 > 待公布：公网部署完成后，培训工作组会提供演示域名，届时补充到这里。
 
-`（示例）https://robot-sim.example.com`
+`（待补充）https://...`
 
-## 快速开始
+## 镜像地址
 
-### 方式一：Docker（推荐）
+```
+docker.io/zhyxuan1452/robot-sim:latest
+```
+
+一键运行：
 
 ```bash
-docker compose up --build -d
+docker run -d -p 8080:8080 --name robot-sim zhyxuan1452/robot-sim:latest
 ```
 
 打开 <http://localhost:8080>。
 
-停止：
+停止并清理：
 
 ```bash
-docker compose down
+docker stop robot-sim && docker rm robot-sim
+```
+
+## 快速开始（本地开发）
+
+### 方式一：Docker Compose
+
+```bash
+docker compose up --build -d
 ```
 
 ### 方式二：本地 Python
@@ -76,13 +88,15 @@ python app.py
 
 ```
 robot-sim/
-├── app.py                # HTTP 层
-├── sim.py                # 仿真核心（唯一规则来源）
-├── static/index.html     # 前端页面
-├── tests/test_sim.py     # 单元测试
-├── docs/需求.md           # 需求与验收标准
+├── app.py                       # HTTP 层
+├── sim.py                       # 仿真核心（唯一规则来源）
+├── static/index.html            # 前端页面
+├── tests/test_sim.py            # 单元测试
+├── docs/需求.md                  # 需求与验收标准
 ├── Dockerfile
 ├── docker-compose.yml
+├── .github/workflows/ci.yml     # 测试 + 构建检查
+├── .github/workflows/publish.yml# 构建并推送到 Docker Hub
 └── README.md
 ```
 
@@ -92,12 +106,13 @@ robot-sim/
 python -m unittest discover -s tests -v
 ```
 
-## 镜像
+## CI / CD
 
-- 本地镜像名：`robot-sim:v1`
-- 仓库地址：待推送后补充
+- `ci`：每次推送运行单元测试，并构建镜像、启动容器做健康检查
+- `publish`：推送 `main` 后自动构建并发布镜像到 Docker Hub
 
 ## 已知限制
 
 - 状态保存在内存，重启即丢失。
 - 单实例部署，不支持多用户各自独立的机器人状态。
+- 二维仿真，未接入真实机器人。
